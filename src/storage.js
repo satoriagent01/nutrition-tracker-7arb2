@@ -79,12 +79,18 @@ export function saveMeal(storage, meal) {
 export function loadPrefs(storage) {
   const data = storage.getItem(PREFS_KEY);
   if (!data) {
-    return { trackedNutrients: ["energy", "fat", "carbohydrates", "protein"] };
+    return {
+      trackedNutrients: ["energy", "fat", "saturatedFat", "sugars"],
+      defaultServingUnit: "g",
+    };
   }
   try {
     return JSON.parse(data);
   } catch {
-    return { trackedNutrients: ["energy", "fat", "carbohydrates", "protein"] };
+    return {
+      trackedNutrients: ["energy", "fat", "saturatedFat", "sugars"],
+      defaultServingUnit: "g",
+    };
   }
 }
 
