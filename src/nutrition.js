@@ -12,7 +12,7 @@ export function scaleNutrition(per100g, grams) {
   const factor = grams / 100;
   const result = {};
   for (const key of Object.keys(per100g)) {
-    result[key] = per100g[key] * factor;
+    result[key] = Math.round(per100g[key] * factor * 1e10) / 1e10;
   }
   return result;
 }
