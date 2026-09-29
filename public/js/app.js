@@ -1,5 +1,5 @@
-import { parseNutritionTable } from "../src/ocr.js";
-import { scaleNutrition } from "../src/nutrition.js";
+import { parseNutritionTable } from "../../src/ocr.js";
+import { scaleNutrition } from "../../src/nutrition.js";
 import {
   loadFoods,
   saveFood,
@@ -7,8 +7,8 @@ import {
   saveMeal,
   loadPrefs,
   savePrefs,
-} from "../src/storage.js";
-import { createMeal, getMealTotal, getDailyTotal } from "../src/meals.js";
+} from "../../src/storage.js";
+import { createMeal, getMealTotal, getDailyTotal } from "../../src/meals.js";
 
 // Storage key constants
 const FOODS_KEY = "nutrition-tracker-foods";
