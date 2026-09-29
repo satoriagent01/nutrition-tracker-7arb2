@@ -59,6 +59,11 @@ export function getMealTotal(meal, foods) {
     }
   }
 
+  // Round all values to avoid floating point issues
+  for (const key of Object.keys(totals)) {
+    totals[key] = Math.round(totals[key] * 1e10) / 1e10;
+  }
+
   return totals;
 }
 
@@ -84,6 +89,11 @@ export function getDailyTotal(meals, foods, trackedNutrients) {
         totals[nutrient] += mealTotal[nutrient];
       }
     }
+  }
+
+  // Round all values to avoid floating point issues
+  for (const key of Object.keys(totals)) {
+    totals[key] = Math.round(totals[key] * 1e10) / 1e10;
   }
 
   return totals;
