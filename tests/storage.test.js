@@ -1,274 +1,331 @@
 import { test, describe } from "node:test";
 import assert from "node:assert/strict";
-import {
-  loadFoods,
-  saveFood,
-  loadMeals,
-  saveMeal,
-  loadPrefs,
-  savePrefs,
-} from "../src/storage.js";
+import { Storage } from "../src/storage.js";
 
-describe("storage module", () => {
-  // Helper to create a mock storage object
-  function createMockStorage() {
-    const store = new Map();
-    return {
-      getItem(key) {
-        const val = store.get(key);
-        return val !== undefined ? val : null;
-      },
-      setItem(key, value) {
-        store.set(key, value);
+describe("Storage - Food CRUD", () => {
+  test("AC-1: Creates a new food entry", () => {
+    const storage = new Storage();
+    const food = {
+      id: "food-1",
+      name: "Apple",
+      servingSize: 100,
+      servingUnit: "g",
+      nutrition: {
+        energy: { kcal: 52 },
+        carbohydrate: 13.8,
+        sugar: 10.4,
+        fiber: 2.4,
+        protein: 0.3,
+        fat: 0.2,
       },
     };
-  }
 
-  describe("saveFood / loadFoods", () => {
-    test("saves and loads a food item", () => {
-      const storage = createMockStorage();
-      const food = {
-        id: "food-1",
-        name: "Hazelnut Chocolate Bar",
-        energy: 2292,
-        fat: 33,
-        saturatedFat: 13,
-        carbohydrates: 55,
-        sugars: 45,
-        fiber: 2.4,
-        protein: 6.8,
-        salt: 0.18,
-        servingSize: 30,
-      };
+    storage.addFood(food);
+    const retrieved = storage.getFood("food-1");
 
-      saveFood(storage, food);
-      const foods = loadFoods(storage);
-
-      assert.strictEqual(foods.length, 1);
-      assert.deepStrictEqual(foods[0], food);
-    });
-
-    test("saves multiple food items", () => {
-      const storage = createMockStorage();
-      const food1 = {
-        id: "food-1",
-        name: "Hazelnut Chocolate Bar",
-        energy: 2292,
-        fat: 33,
-        saturatedFat: 13,
-        carbohydrates: 55,
-        sugars: 45,
-        fiber: 2.4,
-        protein: 6.8,
-        salt: 0.18,
-        servingSize: 30,
-      };
-      const food2 = {
-        id: "food-2",
-        name: "Apple Juice",
-        energy: 199,
-        fat: 0,
-        saturatedFat: 0,
-        carbohydrates: 11,
-        sugars: 10,
-        fiber: 0.7,
-        protein: 0.4,
-        salt: 0,
-        servingSize: 200,
-      };
-
-      saveFood(storage, food1);
-      saveFood(storage, food2);
-      const foods = loadFoods(storage);
-
-      assert.strictEqual(foods.length, 2);
-      assert.strictEqual(foods[0].id, "food-1");
-      assert.strictEqual(foods[1].id, "food-2");
-    });
-
-    test("returns empty array when no foods saved", () => {
-      const storage = createMockStorage();
-      const foods = loadFoods(storage);
-      assert.deepStrictEqual(foods, []);
-    });
-
-    test("overwrites food with same id", () => {
-      const storage = createMockStorage();
-      const food1 = {
-        id: "food-1",
-        name: "Old Name",
-        energy: 100,
-        fat: 5,
-        saturatedFat: 2,
-        carbohydrates: 10,
-        sugars: 5,
-        fiber: 1,
-        protein: 2,
-        salt: 0.1,
-        servingSize: 30,
-      };
-      const food2 = {
-        id: "food-1",
-        name: "New Name",
-        energy: 200,
-        fat: 10,
-        saturatedFat: 4,
-        carbohydrates: 20,
-        sugars: 10,
-        fiber: 2,
-        protein: 4,
-        salt: 0.2,
-        servingSize: 50,
-      };
-
-      saveFood(storage, food1);
-      saveFood(storage, food2);
-      const foods = loadFoods(storage);
-
-      assert.strictEqual(foods.length, 1);
-      assert.strictEqual(foods[0].name, "New Name");
-      assert.strictEqual(foods[0].energy, 200);
-    });
+    assert.strictEqual(retrieved.name, "Apple");
+    assert.strictEqual(retrieved.servingSize, 100);
+    assert.deepStrictEqual(retrieved.nutrition, food.nutrition);
   });
 
-  describe("saveMeal / loadMeals", () => {
-    test("saves and loads a meal", () => {
-      const storage = createMockStorage();
-      const meal = {
-        id: "meal-1",
-        name: "Breakfast",
-        items: [
-          { foodId: "food-1", grams: 30 },
-          { foodId: "food-2", grams: 200 },
-        ],
-      };
+  test("AC-2: Updates an existing food entry", () => {
+    const storage = new Storage();
+    const food = {
+      id: "food-1",
+      name: "Apple",
+      servingSize: 100,
+      servingUnit: "g",
+      nutrition: {
+        energy: { kcal: 52 },
+        carbohydrate: 13.8,
+      },
+    };
 
-      saveMeal(storage, meal);
-      const meals = loadMeals(storage);
+    storage.addFood(food);
 
-      assert.strictEqual(meals.length, 1);
-      assert.deepStrictEqual(meals[0], meal);
-    });
+    const updatedFood = {
+      id: "food-1",
+      name: "Apple (Red)",
+      servingSize: 100,
+      servingUnit: "g",
+      nutrition: {
+        energy: { kcal: 52 },
+        carbohydrate: 13.8,
+        sugar: 10.4,
+      },
+    };
 
-    test("saves multiple meals", () => {
-      const storage = createMockStorage();
-      const meal1 = {
-        id: "meal-1",
-        name: "Breakfast",
-        items: [{ foodId: "food-1", grams: 30 }],
-      };
-      const meal2 = {
-        id: "meal-2",
-        name: "Lunch",
-        items: [{ foodId: "food-2", grams: 200 }],
-      };
+    storage.updateFood(updatedFood);
+    const retrieved = storage.getFood("food-1");
 
-      saveMeal(storage, meal1);
-      saveMeal(storage, meal2);
-      const meals = loadMeals(storage);
-
-      assert.strictEqual(meals.length, 2);
-      assert.strictEqual(meals[0].name, "Breakfast");
-      assert.strictEqual(meals[1].name, "Lunch");
-    });
-
-    test("returns empty array when no meals saved", () => {
-      const storage = createMockStorage();
-      const meals = loadMeals(storage);
-      assert.deepStrictEqual(meals, []);
-    });
-
-    test("overwrites meal with same id", () => {
-      const storage = createMockStorage();
-      const meal1 = {
-        id: "meal-1",
-        name: "Old Meal",
-        items: [{ foodId: "food-1", grams: 30 }],
-      };
-      const meal2 = {
-        id: "meal-1",
-        name: "New Meal",
-        items: [{ foodId: "food-2", grams: 100 }],
-      };
-
-      saveMeal(storage, meal1);
-      saveMeal(storage, meal2);
-      const meals = loadMeals(storage);
-
-      assert.strictEqual(meals.length, 1);
-      assert.strictEqual(meals[0].name, "New Meal");
-      assert.strictEqual(meals[0].items[0].foodId, "food-2");
-    });
+    assert.strictEqual(retrieved.name, "Apple (Red)");
+    assert.strictEqual(retrieved.nutrition.sugar, 10.4);
   });
 
-  describe("savePrefs / loadPrefs", () => {
-    test("saves and loads preferences", () => {
-      const storage = createMockStorage();
-      const prefs = {
-        trackedNutrients: ["energy", "fat", "saturatedFat", "sugars"],
-        defaultServingUnit: "g",
-      };
+  test("AC-3: Deletes a food entry", () => {
+    const storage = new Storage();
+    const food = {
+      id: "food-1",
+      name: "Apple",
+      servingSize: 100,
+      servingUnit: "g",
+      nutrition: { energy: { kcal: 52 } },
+    };
 
-      savePrefs(storage, prefs);
-      const loaded = loadPrefs(storage);
+    storage.addFood(food);
+    storage.deleteFood("food-1");
 
-      assert.deepStrictEqual(loaded, prefs);
-    });
-
-    test("returns default preferences when none saved", () => {
-      const storage = createMockStorage();
-      const prefs = loadPrefs(storage);
-
-      assert.deepStrictEqual(prefs, {
-        trackedNutrients: ["energy", "fat", "saturatedFat", "sugars"],
-        defaultServingUnit: "g",
-      });
-    });
-
-    test("overwrites existing preferences", () => {
-      const storage = createMockStorage();
-      const prefs1 = {
-        trackedNutrients: ["energy"],
-        defaultServingUnit: "ml",
-      };
-      const prefs2 = {
-        trackedNutrients: ["energy", "protein"],
-        defaultServingUnit: "g",
-      };
-
-      savePrefs(storage, prefs1);
-      savePrefs(storage, prefs2);
-      const loaded = loadPrefs(storage);
-
-      assert.deepStrictEqual(loaded, prefs2);
-    });
+    const retrieved = storage.getFood("food-1");
+    assert.strictEqual(retrieved, undefined);
   });
 
-  describe("storage isolation", () => {
-    test("different storage instances are independent", () => {
-      const storage1 = createMockStorage();
-      const storage2 = createMockStorage();
+  test("AC-4: Lists all foods", () => {
+    const storage = new Storage();
+    storage.addFood({
+      id: "food-1",
+      name: "Apple",
+      servingSize: 100,
+      servingUnit: "g",
+      nutrition: { energy: { kcal: 52 } },
+    });
+    storage.addFood({
+      id: "food-2",
+      name: "Banana",
+      servingSize: 100,
+      servingUnit: "g",
+      nutrition: { energy: { kcal: 89 } },
+    });
 
-      const food = {
-        id: "food-1",
-        name: "Test Food",
-        energy: 100,
-        fat: 5,
-        saturatedFat: 2,
-        carbohydrates: 10,
-        sugars: 5,
-        fiber: 1,
-        protein: 2,
-        salt: 0.1,
-        servingSize: 30,
-      };
+    const foods = storage.listFoods();
 
-      saveFood(storage1, food);
-      const foods1 = loadFoods(storage1);
-      const foods2 = loadFoods(storage2);
+    assert.strictEqual(foods.length, 2);
+    assert.strictEqual(foods[0].name, "Apple");
+    assert.strictEqual(foods[1].name, "Banana");
+  });
 
-      assert.strictEqual(foods1.length, 1);
-      assert.strictEqual(foods2.length, 0);
+  test("AC-5: Returns undefined for non-existent food", () => {
+    const storage = new Storage();
+    const retrieved = storage.getFood("non-existent");
+    assert.strictEqual(retrieved, undefined);
+  });
+
+  test("AC-6: Handles duplicate food IDs (update behavior)", () => {
+    const storage = new Storage();
+    storage.addFood({
+      id: "food-1",
+      name: "Apple",
+      servingSize: 100,
+      servingUnit: "g",
+      nutrition: { energy: { kcal: 52 } },
+    });
+    storage.addFood({
+      id: "food-1",
+      name: "Apple (Green)",
+      servingSize: 100,
+      servingUnit: "g",
+      nutrition: { energy: { kcal: 56 } },
+    });
+
+    const foods = storage.listFoods();
+    assert.strictEqual(foods.length, 1);
+    assert.strictEqual(foods[0].name, "Apple (Green)");
+  });
+});
+
+describe("Storage - Meal CRUD", () => {
+  test("AC-7: Creates a new meal entry", () => {
+    const storage = new Storage();
+    const meal = {
+      id: "meal-1",
+      name: "Breakfast",
+      time: "08:00",
+      date: "2024-01-15",
+      foods: [
+        { foodId: "food-1", amount: 150, unit: "g" },
+        { foodId: "food-2", amount: 200, unit: "g" },
+      ],
+    };
+
+    storage.addMeal(meal);
+    const retrieved = storage.getMeal("meal-1");
+
+    assert.strictEqual(retrieved.name, "Breakfast");
+    assert.strictEqual(retrieved.foods.length, 2);
+  });
+
+  test("AC-8: Updates an existing meal", () => {
+    const storage = new Storage();
+    storage.addMeal({
+      id: "meal-1",
+      name: "Breakfast",
+      time: "08:00",
+      date: "2024-01-15",
+      foods: [{ foodId: "food-1", amount: 150, unit: "g" }],
+    });
+
+    storage.updateMeal({
+      id: "meal-1",
+      name: "Morning Snack",
+      time: "10:00",
+      date: "2024-01-15",
+      foods: [
+        { foodId: "food-1", amount: 150, unit: "g" },
+        { foodId: "food-2", amount: 100, unit: "g" },
+      ],
+    });
+
+    const retrieved = storage.getMeal("meal-1");
+    assert.strictEqual(retrieved.name, "Morning Snack");
+    assert.strictEqual(retrieved.foods.length, 2);
+  });
+
+  test("AC-9: Deletes a meal", () => {
+    const storage = new Storage();
+    storage.addMeal({
+      id: "meal-1",
+      name: "Breakfast",
+      time: "08:00",
+      date: "2024-01-15",
+      foods: [],
+    });
+
+    storage.deleteMeal("meal-1");
+    assert.strictEqual(storage.getMeal("meal-1"), undefined);
+  });
+
+  test("AC-10: Lists meals by date", () => {
+    const storage = new Storage();
+    storage.addMeal({
+      id: "meal-1",
+      name: "Breakfast",
+      time: "08:00",
+      date: "2024-01-15",
+      foods: [],
+    });
+    storage.addMeal({
+      id: "meal-2",
+      name: "Lunch",
+      time: "12:00",
+      date: "2024-01-15",
+      foods: [],
+    });
+    storage.addMeal({
+      id: "meal-3",
+      name: "Dinner",
+      time: "18:00",
+      date: "2024-01-16",
+      foods: [],
+    });
+
+    const meals = storage.listMeals("2024-01-15");
+    assert.strictEqual(meals.length, 2);
+    assert.strictEqual(meals[0].name, "Breakfast");
+    assert.strictEqual(meals[1].name, "Lunch");
+  });
+
+  test("AC-11: Returns empty array for date with no meals", () => {
+    const storage = new Storage();
+    const meals = storage.listMeals("2024-01-15");
+    assert.deepStrictEqual(meals, []);
+  });
+});
+
+describe("Storage - Preferences", () => {
+  test("AC-12: Sets and retrieves user preferences", () => {
+    const storage = new Storage();
+    const prefs = {
+      dailyCalorieTarget: 2000,
+      dailyProteinTarget: 150,
+      dailyCarbTarget: 250,
+      dailyFatTarget: 65,
+      dietaryRestrictions: ["gluten-free"],
+    };
+
+    storage.setPreferences(prefs);
+    const retrieved = storage.getPreferences();
+
+    assert.strictEqual(retrieved.dailyCalorieTarget, 2000);
+    assert.strictEqual(retrieved.dailyProteinTarget, 150);
+    assert.deepStrictEqual(retrieved.dietaryRestrictions, ["gluten-free"]);
+  });
+
+  test("AC-13: Returns default preferences when none set", () => {
+    const storage = new Storage();
+    const retrieved = storage.getPreferences();
+
+    assert.strictEqual(retrieved.dailyCalorieTarget, 2000);
+    assert.strictEqual(retrieved.dailyProteinTarget, 50);
+    assert.strictEqual(retrieved.dailyCarbTarget, 250);
+    assert.strictEqual(retrieved.dailyFatTarget, 65);
+    assert.deepStrictEqual(retrieved.dietaryRestrictions, []);
+  });
+
+  test("AC-14: Updates preferences partially", () => {
+    const storage = new Storage();
+    storage.setPreferences({
+      dailyCalorieTarget: 2500,
+      dailyProteinTarget: 200,
+      dailyCarbTarget: 300,
+      dailyFatTarget: 80,
+      dietaryRestrictions: ["vegan"],
+    });
+
+    storage.updatePreferences({ dailyCalorieTarget: 2200 });
+    const retrieved = storage.getPreferences();
+
+    assert.strictEqual(retrieved.dailyCalorieTarget, 2200);
+    assert.strictEqual(retrieved.dailyProteinTarget, 200);
+    assert.strictEqual(retrieved.dietaryRestrictions[0], "vegan");
+  });
+});
+
+describe("Storage - Daily Summary", () => {
+  test("AC-15: Calculates daily nutrition summary from meals", () => {
+    const storage = new Storage();
+    storage.addFood({
+      id: "food-1",
+      name: "Apple",
+      servingSize: 100,
+      servingUnit: "g",
+      nutrition: { energy: { kcal: 52 }, carbohydrate: 13.8, protein: 0.3, fat: 0.2 },
+    });
+    storage.addFood({
+      id: "food-2",
+      name: "Banana",
+      servingSize: 100,
+      servingUnit: "g",
+      nutrition: { energy: { kcal: 89 }, carbohydrate: 22.8, protein: 1.1, fat: 0.3 },
+    });
+
+    storage.addMeal({
+      id: "meal-1",
+      name: "Breakfast",
+      time: "08:00",
+      date: "2024-01-15",
+      foods: [
+        { foodId: "food-1", amount: 150, unit: "g" },
+        { foodId: "food-2", amount: 120, unit: "g" },
+      ],
+    });
+
+    const summary = storage.getDailySummary("2024-01-15");
+
+    assert.ok(summary);
+    assert.ok(summary.totalCalories > 0);
+    assert.ok(summary.totalProtein > 0);
+    assert.ok(summary.totalCarbohydrate > 0);
+    assert.ok(summary.totalFat > 0);
+  });
+
+  test("AC-16: Returns empty summary for date with no meals", () => {
+    const storage = new Storage();
+    const summary = storage.getDailySummary("2024-01-15");
+
+    assert.deepStrictEqual(summary, {
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbohydrate: 0,
+      totalFat: 0,
     });
   });
 });
