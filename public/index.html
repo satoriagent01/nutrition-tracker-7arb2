@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nutrition Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header>
+    <h1>🥗 Nutrition Tracker</h1>
+    <p class="subtitle">Free, ad-free nutrition tracking with photo-based label scanning</p>
+  </header>
+
+  <main>
+    <!-- Navigation Tabs -->
+    <nav class="tabs">
+      <button class="tab active" data-tab="scan">📷 Scan</button>
+      <button class="tab" data-tab="foods">🍎 Foods</button>
+      <button class="tab" data-tab="meals">🍽️ Meals</button>
+      <button class="tab" data-tab="track">📊 Track</button>
+      <button class="tab" data-tab="settings">⚙️ Settings</button>
+    </nav>
+
+    <!-- Scan Tab -->
+    <section id="tab-scan" class="tab-content active">
+      <h2>Scan Nutrition Label</h2>
+      <div class="upload-area" id="upload-area">
+        <p>Drag & drop a photo here, or click to upload</p>
+        <input type="file" id="file-input" accept="image/*" hidden>
+        <button id="camera-btn">📸 Take Photo</button>
+      </div>
+      <div id="preview-container" class="hidden">
+        <img id="preview-image" src="" alt="Preview">
+        <button id="process-btn">🔍 Extract Nutrition</button>
+        <button id="cancel-preview">✕ Cancel</button>
+      </div>
+      <div id="ocr-config" class="hidden">
+        <h3>AI Configuration</h3>
+        <input type="text" id="ai-url" placeholder="AI endpoint URL">
+        <input type="password" id="ai-key" placeholder="API Key">
+        <input type="text" id="ai-model" placeholder="Model name">
+        <button id="extract-btn">Extract</button>
+      </div>
+      <div id="ocr-result" class="hidden">
+        <h3>Extracted Nutrition Data</h3>
+        <table id="nutrition-table">
+          <thead>
+            <tr>
+              <th>Nutrient</th>
+              <th>Per 100g</th>
+              <th>Per Serving</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+        <input type="text" id="food-name-input" placeholder="Food name">
+        <input type="number" id="serving-size-input" placeholder="Serving size (g)">
+        <button id="save-food-btn">💾 Save Food</button>
+      </div>
+    </section>
+
+    <!-- Foods Tab -->
+    <section id="tab-foods" class="tab-content">
+      <h2>My Foods</h2>
+      <button id="add-food-btn">+ Add Food</button>
+      <div id="food-form" class="hidden">
+        <input type="text" id="new-food-name" placeholder="Food name">
+        <input type="number" id="new-food-energy" placeholder="Energy (kJ/100g)">
+        <input type="number" id="new-food-fat" placeholder="Fat (g/100g)">
+        <input type="number" id="new-food-sat-fat" placeholder="Saturated Fat (g/100g)">
+        <input type="number" id="new-food-carbs" placeholder="Carbs (g/100g)">
+        <input type="number" id="new-food-sugars" placeholder="Sugars (g/100g)">
+        <input type="number" id="new-food-fiber" placeholder="Fiber (g/100g)">
+        <input type="number" id="new-food-protein" placeholder="Protein (g/100g)">
+        <input type="number" id="new-food-salt" placeholder="Salt (g/100g)">
+        <input type="number" id="new-food-serving" placeholder="Serving size (g)">
+        <button id="save-new-food-btn">Save</button>
+        <button id="cancel-food-btn">Cancel</button>
+      </div>
+      <ul id="food-list"></ul>
+    </section>
+
+    <!-- Meals Tab -->
+    <section id="tab-meals" class="tab-content">
+      <h2>My Meals</h2>
+      <button id="add-meal-btn">+ Add Meal</button>
+      <div id="meal-form" class="hidden">
+        <input type="text" id="new-meal-name" placeholder="Meal name">
+        <div id="meal-items"></div>
+        <button id="add-meal-item-btn">+ Add Food Item</button>
+        <button id="save-meal-btn">Save Meal</button>
+        <button id="cancel-meal-btn">Cancel</button>
+      </div>
+      <ul id="meal-list"></ul>
+    </section>
+
+    <!-- Track Tab -->
+    <section id="tab-track" class="tab-content">
+      <h2>Daily Summary</h2>
+      <div id="daily-totals">
+        <h3>Today's Intake</h3>
+        <div id="totals-display"></div>
+      </div>
+    </section>
+
+    <!-- Settings Tab -->
+    <section id="tab-settings" class="tab-content">
+      <h2>Settings</h2>
+      <h3>Tracked Nutrients</h3>
+      <div id="nutrient-checks"></div>
+      <h3>AI Configuration</h3>
+      <input type="text" id="settings-ai-url" placeholder="AI endpoint URL">
+      <input type="password" id="settings-ai-key" placeholder="API Key">
+      <input type="text" id="settings-ai-model" placeholder="Model name">
+      <button id="save-settings-btn">Save Settings</button>
+      <button id="clear-data-btn">Clear All Data</button>
+    </section>
+  </main>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
