@@ -76,18 +76,14 @@ export function getMealTotal(meal, foods) {
  */
 export function getDailyTotal(meals, foods, trackedNutrients) {
   const totals = {};
-
   for (const nutrient of trackedNutrients) {
     totals[nutrient] = 0;
   }
 
   for (const meal of meals) {
     const mealTotal = getMealTotal(meal, foods);
-
     for (const nutrient of trackedNutrients) {
-      if (mealTotal[nutrient] !== undefined) {
-        totals[nutrient] += mealTotal[nutrient];
-      }
+      totals[nutrient] += mealTotal[nutrient] || 0;
     }
   }
 
