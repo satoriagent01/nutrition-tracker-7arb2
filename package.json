@@ -1,9 +1,11 @@
 {
-  "name": "nutrition-tracker",
+  "name": "nutrition-tracker-7arb2",
   "version": "1.0.0",
-  "description": "Free, ad-free nutrition tracker with OCR for food labels",
+  "description": "Nutrition tracker with OCR parsing, scaling, storage, meal planning, and UI integration",
   "type": "module",
   "scripts": {
     "test": "node --test"
+  },
+  "devDependencies": {
   }
 }
