@@ -1,146 +1,196 @@
 /**
- * OCR module - parses nutrition table text into structured data.
- * In production, this would call an OpenAI-compatible endpoint.
- * For now, it provides the parseNutritionTable function that
- * extracts nutrition data from OCR text output.
+ * OCR module - parses nutrition table text into structured data
  */
 
 /**
- * Parses OCR text output into structured nutrition data.
- * @param {string} text - The OCR-extracted text from a nutrition label
+ * Maps common nutrient names (in various languages) to standard keys
+ */
+const nutrientMap = {
+  // Energy
+  'energie': 'energy',
+  'énergie': 'energy',
+  'energia': 'energy',
+  'energy': 'energy',
+  // Fat
+  'fett': 'fat',
+  'matières grasses': 'fat',
+  'vetten': 'fat',
+  'grassi': 'fat',
+  'fat': 'fat',
+  'fats': 'fat',
+  // Saturated fat
+  'gesättigte fettsäuren': 'saturatedFat',
+  'acides gras saturés': 'saturatedFat',
+  'verzadigde vetzuren': 'saturatedFat',
+  'acidi grassi saturi': 'saturatedFat',
+  'saturated fat': 'saturatedFat',
+  'saturated fats': 'saturatedFat',
+  'verz. vet': 'saturatedFat',
+  // Carbohydrates
+  'kohlenhydrate': 'carbohydrates',
+  'glucides': 'carbohydrates',
+  'koolhydraten': 'carbohydrates',
+  'carboidrati': 'carbohydrates',
+  'carbohydrates': 'carbohydrates',
+  'carbs': 'carbohydrates',
+  // Sugars
+  'zucker': 'sugars',
+  'sucres': 'sugars',
+  'suikers': 'sugars',
+  'zuccheri': 'sugars',
+  'sugars': 'sugars',
+  'sugar': 'sugars',
+  // Fiber
+  'ballaststoffe': 'fiber',
+  'fibres alimentaires': 'fiber',
+  'vezels': 'fiber',
+  'fibre': 'fiber',
+  'fiber': 'fiber',
+  'fibres': 'fiber',
+  // Protein
+  'eiweiß': 'protein',
+  ' protéines': 'protein',
+  'eiwitten': 'protein',
+  'proteïne': 'protein',
+  'protein': 'protein',
+  'proteins': 'protein',
+  // Salt
+  'salz': 'salt',
+  'sel': 'salt',
+  'zout': 'salt',
+  'sale': 'salt',
+  'salt': 'salt',
+  'sodium': 'salt',
+};
+
+/**
+ * Parse a nutrition table from OCR text
+ * @param {string} text - OCR extracted text from a nutrition label
  * @returns {object} Parsed nutrition data with per100g and perServing values
  */
 export function parseNutritionTable(text) {
-  if (!text || typeof text !== "string") {
-    return {};
+  const result = {};
+  const lines = text.split('\n');
+
+  // Initialize all nutrients with null
+  const allNutrients = ['energy', 'fat', 'saturatedFat', 'carbohydrates', 'sugars', 'fiber', 'protein', 'salt'];
+  for (const nutrient of allNutrients) {
+    result[nutrient] = { per100g: null, perServing: null, unit: 'g' };
   }
 
-  const result = {
-    energy: { per100g: null, perServing: null, unit: "kJ" },
-    fat: { per100g: null, perServing: null, unit: "g" },
-    saturatedFat: { per100g: null, perServing: null, unit: "g" },
-    carbohydrates: { per100g: null, perServing: null, unit: "g" },
-    sugars: { per100g: null, perServing: null, unit: "g" },
-    fiber: { per100g: null, perServing: null, unit: "g" },
-    protein: { per100g: null, perServing: null, unit: "g" },
-    salt: { per100g: null, perServing: null, unit: "g" },
-  };
-
-  const lines = text.split("\n");
-  let hasPer100g = false;
-  let hasPerServing = false;
-
-  // Detect column headers
-  for (const line of lines) {
-    const lower = line.toLowerCase();
-    if (lower.includes("100") || lower.includes("per 100")) {
-      hasPer100g = true;
-    }
-    if (lower.includes("serving") || lower.includes("per ") || lower.includes("glas") || lower.includes("porción") || lower.includes("porzione")) {
-      hasPerServing = true;
-    }
-  }
-
-  // Nutrient mapping: regex patterns to match various language names
-  const nutrientPatterns = [
-    { key: "energy", patterns: [/energie/i, /energy/i, /calorías?/i, /calorias?/i, /calorías?/i] },
-    { key: "fat", patterns: [/fett/i, /fat/i, /gras/i, /grasa/i, /grassi/i, /vet/i, /matières grasses/i, /materia grass/i] },
-    { key: "saturatedFat", patterns: [/gesättigte/i, /saturated/i, /saturés/i, /saturate/i, /saturi/i, /verzadigde/i, /verzadigde vet/i, /verzadigde vetzuren/i, /verzadigde vet/i, /verzadigde/i, /verz. vet/i, /verz. vet/i, /acides gras saturés/i, /acidi grassi saturi/i, /acidi grassi saturi/i] },
-    { key: "carbohydrates", patterns: [/kohlenhydrate/i, /carbohydrates/i, /glucides/i, /koolhydraten/i, /carboidrati/i, /carbohidratos/i, /carbohydrates/i, /koolhydraten/i, /koolhydraten/i, /koolhydraten/i] },
-    { key: "sugars", patterns: [/zucker/i, /sugar/i, /sucres/i, /suikers/i, /zuccheri/i, /azúcar/i, /azucre/i, /sucre/i, /suiikers/i, /suiikers/i, /suiikers/i] },
-    { key: "fiber", patterns: [/ballaststoffe/i, /fiber/i, /fibres/i, /vezels/i, /fibre/i, /fibre/i, /fibra/i, /fibras/i] },
-    { key: "protein", patterns: [/eiweiß/i, /protein/i, /protéines/i, /eiwitten/i, /proteïne/i, /proteína/i, /proteine/i, /proteins/i, /proteine/i] },
-    { key: "salt", patterns: [/salz/i, /salt/i, /sel/i, /zout/i, /sale/i, /sal/i, /sodio/i, /sodium/i] },
-  ];
+  let hasTwoColumns = false;
+  let detectedUnit = 'g';
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    for (const { key, patterns } of nutrientPatterns) {
-      for (const pattern of patterns) {
-        if (pattern.test(trimmed)) {
-          // Extract the numeric value(s) from the line
-          // Look for patterns like "2292 kJ", "33 g", "2292 kJ / 549 kcal"
-          const valueMatch = trimmed.match(/([\d,]+)\s*(?:kJ|kcal|g|ml)/);
-          if (valueMatch) {
-            const value = parseFloat(valueMatch[1].replace(",", "."));
-            if (key === "energy") {
-              // Energy might have both kJ and kcal
-              const kJMatch = trimmed.match(/([\d,]+)\s*kJ/);
-              const kcalMatch = trimmed.match(/([\d,]+)\s*kcal/);
-              if (kJMatch) {
-                const kJVal = parseFloat(kJMatch[1].replace(",", "."));
-                if (hasPer100g && !hasPerServing) {
-                  result.energy.per100g = kJVal;
-                } else if (hasPer100g && hasPerServing) {
-                  // Try to determine which column is which
-                  // If there are two values, first is per 100g, second is per serving
-                  const allNums = trimmed.match(/([\d,]+)/g);
-                  if (allNums && allNums.length >= 2) {
-                    result.energy.per100g = parseFloat(allNums[0].replace(",", "."));
-                    result.energy.perServing = parseFloat(allNums[1].replace(",", "."));
-                  } else {
-                    result.energy.per100g = kJVal;
-                  }
-                } else {
-                  result.energy.perServing = kJVal;
-                }
-              } else if (kcalMatch) {
-                const kcalVal = parseFloat(kcalMatch[1].replace(",", "."));
-                if (hasPer100g && !hasPerServing) {
-                  result.energy.per100g = kcalVal;
-                } else if (hasPer100g && hasPerServing) {
-                  const allNums = trimmed.match(/([\d,]+)/g);
-                  if (allNums && allNums.length >= 2) {
-                    result.energy.per100g = parseFloat(allNums[0].replace(",", "."));
-                    result.energy.perServing = parseFloat(allNums[1].replace(",", "."));
-                  } else {
-                    result.energy.per100g = kcalVal;
-                  }
-                } else {
-                  result.energy.perServing = kcalVal;
-                }
-              }
-            } else {
-              if (hasPer100g && !hasPerServing) {
-                result[key].per100g = value;
-              } else if (hasPer100g && hasPerServing) {
-                // Try to find two values
-                const allNums = trimmed.match(/([\d,]+)/g);
-                if (allNums && allNums.length >= 2) {
-                  result[key].per100g = parseFloat(allNums[0].replace(",", "."));
-                  result[key].perServing = parseFloat(allNums[1].replace(",", "."));
-                } else {
-                  result[key].per100g = value;
-                }
-              } else {
-                result[key].perServing = value;
-              }
-            }
-          }
+    // Skip header lines
+    if (trimmed.includes('Nährwertdeklaration') ||
+        trimmed.includes('Déclaration nutritionnelle') ||
+        trimmed.includes('Voedingswaarde') ||
+        trimmed.includes('Dichiarazione nutrizionale') ||
+        trimmed.includes('Per glas') ||
+        trimmed.includes('Pro 100') ||
+        trimmed.includes('Per 100') ||
+        trimmed.includes('Pro porzione') ||
+        trimmed.includes('Per serving') ||
+        trimmed.includes('Per porzione')) {
+      continue;
+    }
+
+    // Try to match a nutrient line
+    // Pattern: nutrient name (possibly with slashes) followed by values
+    // Examples:
+    // "Energie / énergie / energie / energia  2292 kJ  688 kJ"
+    // "energie  199 kJ / 47 kcal"
+    // "Fett  33 g  10 g"
+    // "davon gesättigte Fettsäuren  13,2 g"
+
+    // Try to find a known nutrient name in the line
+    let matchedNutrient = null;
+    let matchedName = '';
+
+    // Split by slashes to get the main name part
+    const parts = trimmed.split(/\s{2,}/);
+    if (parts.length >= 2) {
+      const namePart = parts[0].replace(/^-/, '').trim();
+      // Check if any part of the name (before slashes) matches a known nutrient
+      const nameCandidates = namePart.split('/').map(n => n.trim().toLowerCase());
+
+      for (const candidate of nameCandidates) {
+        // Remove leading dashes and spaces
+        const cleanCandidate = candidate.replace(/^-/, '').trim();
+        if (nutrientMap[cleanCandidate]) {
+          matchedNutrient = nutrientMap[cleanCandidate];
+          matchedName = cleanCandidate;
           break;
         }
       }
     }
-  }
 
-  // If no per100g or perServing was detected, default to per100g
-  if (!hasPer100g && !hasPerServing) {
-    for (const key of Object.keys(result)) {
-      if (result[key].perServing !== null) {
-        result[key].per100g = result[key].perServing;
-        result[key].perServing = null;
+    if (!matchedNutrient) continue;
+
+    // Get the value part (everything after the name)
+    const nameEndIndex = trimmed.indexOf(matchedName);
+    if (nameEndIndex === -1) continue;
+
+    const valuePart = trimmed.substring(nameEndIndex + matchedName.length).trim();
+
+    // Extract numeric values from the value part
+    // Handle formats like:
+    // "2292 kJ  688 kJ" -> two values
+    // "199 kJ / 47 kcal" -> two values (energy specific)
+    // "33 g  10 g" -> two values
+    // "13,2 g" -> one value
+    // "2292 kJ / 549 kcal" -> two values (energy specific)
+
+    // Try to find all numbers (including comma decimals)
+    const numberRegex = /(\d+[,.]?\d*)/g;
+    const numbers = [];
+    let match;
+    while ((match = numberRegex.exec(valuePart)) !== null) {
+      numbers.push(parseFloat(match[1].replace(',', '.')));
+    }
+
+    // Detect unit from the value part
+    if (valuePart.includes('kJ')) {
+      detectedUnit = 'kJ';
+    } else if (valuePart.includes('kcal')) {
+      detectedUnit = 'kcal';
+    }
+
+    if (numbers.length >= 2) {
+      // Two values: per 100g and per serving
+      result[matchedNutrient].per100g = numbers[0];
+      result[matchedNutrient].perServing = numbers[1];
+      hasTwoColumns = true;
+    } else if (numbers.length === 1) {
+      // One value: could be per 100g or per serving
+      // Check if we've seen two-column data before
+      if (hasTwoColumns) {
+        // This line has only one value but we've seen two columns before
+        // This is likely a sub-item (like "davon Zucker") that only has per 100g
+        // or it's a continuation line
+        // For now, assume it's per 100g if we haven't set it yet
+        if (result[matchedNutrient].per100g === null) {
+          result[matchedNutrient].per100g = numbers[0];
+        }
+      } else {
+        // No two-column data seen yet, assume per 100g
+        result[matchedNutrient].per100g = numbers[0];
       }
     }
   }
 
-  // Check if we found any data at all
-  const hasAnyData = Object.values(result).some(
-    (v) => v.per100g !== null || v.perServing !== null
-  );
+  // Set units
+  for (const nutrient of allNutrients) {
+    result[nutrient].unit = detectedUnit;
+  }
 
-  if (!hasAnyData) {
+  // Check if we found any data
+  const hasData = allNutrients.some(n => result[n].per100g !== null || result[n].perServing !== null);
+  if (!hasData) {
     return {};
   }
 
